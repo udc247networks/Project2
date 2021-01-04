@@ -1,0 +1,16 @@
+[
+	{
+		"ParameterKey": "EnvironmentName",
+		"ParameterValue": "Project2-Udacity-2021"
+    },
+
+	{
+		"ParameterKey": "AMItype",
+		"ParameterValue": "t3.small"
+    },
+
+	{
+		"ParameterKey": "AMInumber",
+		"ParameterValue": "ami-0a36eb8fadc976275"
+    }
+]

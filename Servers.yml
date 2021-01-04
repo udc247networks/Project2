@@ -1,0 +1,232 @@
+Description: >
+  UdaCity Project 2 -Mark C Servers Infrastructure
+
+  This Stack will deploy all the required Application Server infrastructure for the Project
+
+  1 x Iam Role
+  2 x Security Groups 
+  1 x Launch Config
+  1 x User Data 
+
+
+# Parameter Section
+
+Parameters:
+
+    EnvironmentName:
+      Description: A Name for all the Resources 
+      Type: String
+
+    AMItype:
+      Description: AMI type chosen as a Parameter  
+      Type: String
+      Default: t3.small
+
+    AMInumber:
+      Description: AMI number chosen as a Parameter  
+      Type: String
+
+# Resource Section 
+
+Resources:
+
+#IAM Role
+
+  UDIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+
+  UDInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: UDIAMRole
+      
+  UDRolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: UDIAM
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:Get*
+          - s3:list*
+          Resource: "*"
+      Roles:
+      - Ref: UDIAMRole
+
+# Security Group Sub Section
+
+  LBSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to our load balancer
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+
+  WebServerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to our hosts and SSH from local only
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+  
+# Launch Config
+
+  WebAppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          #elevate to root
+          sudo su 
+          # install apache
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          #copy file from s3 bucket 
+          aws s3 cp s3://royal-navy-2021/index.html index.html
+          # copy file from home to apache root 
+          cp index.html /var/www/html/index.html
+          # remove the file in home copied from bucket
+          rm -f index.html
+      ImageId: !Ref AMInumber
+      SecurityGroups:
+      - Ref: WebServerSecGroup
+      InstanceType: !Ref AMItype
+      IamInstanceProfile:  !Ref UDInstanceProfile
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sdk"
+        Ebs:
+          VolumeSize: '10'
+
+  WebAppGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+      - Fn::ImportValue: 
+          !Sub "${EnvironmentName}-PRIV-NETS"
+      LaunchConfigurationName:
+        Ref: WebAppLaunchConfig
+      MinSize: '4'
+      MaxSize: '4'
+      TargetGroupARNs:
+      - Ref: WebAppTargetGroup
+
+  WebAppLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+      - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+      - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+      SecurityGroups:
+      - Ref: LBSecGroup
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: WebAppTargetGroup
+      LoadBalancerArn:
+        Ref: WebAppLB
+      Port: '80'
+      Protocol: HTTP
+
+  ALBListenerRule:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn: !Ref 'WebAppTargetGroup'
+        Conditions:
+        - Field: path-pattern
+          Values: [/]
+        ListenerArn: !Ref 'Listener'
+        Priority: 1
+
+  WebAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: 
+        Fn::ImportValue:
+          Fn::Sub: "${EnvironmentName}-VPCID"
+
+# Outputs
+
+Outputs:
+    websiteURL: 
+        Description: this is the endpoint to use for accessing the URL of the Load Balancer 
+        Value: !Join [ "", [ 'http://', !GetAtt WebAppLB.DNSName  ]]
+        Export:
+          Name: !Sub ${EnvironmentName}-URL
+
+    UDIAMRole:
+        Description: A reference to the public subnet in the 1st Availability Zone
+        Value: !Ref UDIAMRole
+        Export:
+          Name: !Sub ${EnvironmentName}-iam
+
+#Rubrics
+
+# Load Balancer Health Check and Listener Port 80 should be used in Security groups, health checks and listeners associated with the load balancer = yes
+
+# Target Group The auto-scaling group needs to have a property that associates it with a target group. The Load Balancer will have a Listener rule associated with the same target group = yes
+
+#Auto-Scaling
+
+# Subnets Students should be using PRIV-NET ( private subnets ) for their auto-scaling instances  = yes
+
+# Machine Specs The machine should have 10 GB or more of disk and should be a t3.small or better. = yes
+
+# SSH Key There shouldn’t be a ‘keyname’ property in the launch config
+
+#Bonus Any values in the output section are a bonus = yes

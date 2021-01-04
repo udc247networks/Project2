@@ -1,0 +1,16 @@
+[
+	{
+		"ParameterKey": "EnvironmentName",
+		"ParameterValue": "Project2-Udacity-2021"
+    },
+    
+	{
+		"ParameterKey": "VpcCIDR",
+		"ParameterValue": "10.100.0.0/16"
+    },
+
+    {
+        "ParameterKey": "SubnetCIDRBlocks",
+        "ParameterValue": "10.100.1.0/24, 10.100.2.0/24, 10.100.10.0/24, 10.100.20.0/24"
+    }
+]

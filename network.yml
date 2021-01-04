@@ -1,0 +1,305 @@
+Description: >
+  UdaCity Project 2 -Mark C Network Infrastructure
+
+  This Stack will deploy all the required Application Network infrastructure for the Project
+  1 x VPC
+  1 x IGW
+  2 x Public Subnets  (Across AZ's)
+  2 x Private Subnets (Across AZ's)
+  2 x Nat Gateways (Across AZ's)
+  2 x Elastic IP 
+  3 x Routing Tables & Associations
+  3 x Default Routes
+
+  Multiple Outputs
+
+# all additional comments , are so I remember where information came from when building the correct solution 
+
+# Parameter Section
+
+Parameters:
+
+    EnvironmentName:
+      Description: A Name for all the Resources 
+      Type: String
+      
+    VpcCIDR:
+      Description: The CIDR for the VPC
+      Type: String
+      Default: 10.100.0.0/16
+
+    SubnetCIDRBlocks:
+        Description: A list of Private Subnets 
+        Type: CommaDelimitedList
+        Default: 10.100.1.0/24, 10.100.2.0/24 10.100.10.0/24 10.100.20.0/24
+
+# Resource Section
+
+Resources:
+
+# VPC Sub Section
+
+  VPC:
+    Description: Private cloud for project-2
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-ref.html
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: 
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+#IGW Sub Section
+
+  InternetGateway:
+    Description: If you need Internet access so you need a gateway !!!
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+  InternetGatewayAttachment:
+    Description: The Gateway needs to be attached to the VPC
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+# Subnet Sub Section
+
+  PrivateSubnet1:
+    Description: 1 of 2  Private Subnet 
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: !Select [ 0, !Ref SubnetCIDRBlocks ] # will pick first subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      AvailabilityZone: !Select [ 0, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html
+      MapPublicIpOnLaunch: false 
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+
+  PrivateSubnet2:
+    Description: 2 of 2  Private Subnet 
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: !Select [ 1, !Ref SubnetCIDRBlocks ] # will pick Second subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      AvailabilityZone: !Select [ 1, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html 
+      MapPublicIpOnLaunch: false 
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+
+  PublicSubnet1:
+    Description: 1 of 2  Public Subnet 
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: !Select [ 2, !Ref SubnetCIDRBlocks ] # will pick third subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      AvailabilityZone: !Select [ 0, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html 
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+
+  PublicSubnet2:
+    Description: 2 of 2  Public Subnet 
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock: !Select [ 3, !Ref SubnetCIDRBlocks ] # will pick Forth subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      AvailabilityZone: !Select [ 1, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html 
+      MapPublicIpOnLaunch: true 
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+
+# Nat Gateway Sub Section
+
+  NatGateway1EIP:
+    Description: 1 of 2 Public IP Address  required for the Solution
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-dependson.html
+    Properties:
+      Domain: vpc
+
+  NatGateway2EIP:
+    Description: 2 of 2 Public IP Address  required for the Solution
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-dependson.html
+    Properties:
+      Domain: vpc
+
+  NatGateway1:
+    Description: 1 of 2 Nat Gateways Required for the Solution 
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+
+  NatGateway2:
+    Description: 2 of 2 Nat Gateways Required for the Solution
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+
+# Public Routing Sub Section
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Public Routes
+
+  DefaultPublicRoute:
+    Description: Route out to the Internet 
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0  
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1routeTableAssoc:
+    Description: Attaching 1 of 2 puplic Subnets to the Public Route Table 
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2routeTableAssoc:
+    Description: Attaching 2 of 2 puplic Subnets to the Public Route Table
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+# Private Routing Sub Section
+
+  PrivateRouteTable1:
+    Description: 1 of 2 Route Table to Route Private Subnet to the Nat Gateway 
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+
+  PrivateRouteTable2:
+    Description: 2 of 2 Route Table to Route Private Subnet to the Nat Gateway 
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+
+  PrivateSubnet1RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  PrivateSubnet2RouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+# Output Section
+
+Outputs: 
+
+  VPC: 
+      Description: A reference to the created VPC
+      Value: !Ref VPC
+      Export:
+        Name: !Sub ${EnvironmentName}-VPCID
+
+  VPCPublicRouteTable:
+      Description: Public Routing
+      Value: !Ref PublicRouteTable
+      Export:
+        Name: !Sub ${EnvironmentName}-PUB-RT
+
+  VPCPrivateRouteTable1:
+      Description: Private Routing AZ1
+      Value: !Ref PrivateRouteTable1
+      Export:
+        Name: !Sub ${EnvironmentName}-PRI1-RT
+
+  VPCPrivateRouteTable2:
+      Description: Private Routing AZ2
+      Value: !Ref PrivateRouteTable2
+      Export:
+        Name: !Sub ${EnvironmentName}-PRI2-RT
+
+  PublicSubnets:
+      Description: A list of the public subnets
+      Value: !Join [ ",", [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]] # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-join.html
+      Export:
+        Name: !Sub ${EnvironmentName}-PUB-NETS
+
+  PrivateSubnets:
+      Description: A list of the private subnets
+      Value: !Join [ ",", [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]] # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-join.html
+      Export:
+        Name: !Sub ${EnvironmentName}-PRIV-NETS
+
+  PublicSubnet1:
+      Description: A reference to the public subnet in the 1st Availability Zone
+      Value: !Ref PublicSubnet1
+      Export:
+        Name: !Sub ${EnvironmentName}-PUB1-SN
+
+  PublicSubnet2: 
+      Description: A reference to the public subnet in the 2nd Availability Zone
+      Value: !Ref PublicSubnet2
+      Export:
+        Name: !Sub ${EnvironmentName}-PUB2-SN
+
+  PrivateSubnet1:
+      Description: A reference to the private subnet in the 1st Availability Zone
+      Value: !Ref PrivateSubnet1
+      Export:
+        Name: !Sub ${EnvironmentName}-PRI1-SN
+
+  PrivateSubnet2: 
+      Description: A reference to the private subnet in the 2nd Availability Zone
+      Value: !Ref PrivateSubnet2
+      Export:
+        Name: !Sub ${EnvironmentName}-PRI2-SN
+
+# Project Specification Section 
+# Parameters = yes
+# Resources = yes
+# Outputs = yes
+# WebSite URL =  http://proje-webap-1mdweypn1lcq3-1502256266.us-west-2.elb.amazonaws.com/
+
+#Bonus Section 
+# Output "Any values in the output section are a bonus" = yes 
