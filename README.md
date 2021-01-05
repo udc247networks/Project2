@@ -1,9 +1,15 @@
 # Project2
-UDACITY Project 2 Repo
+UDACITY Project 2 
 
-http://proje-webap-1mdweypn1lcq3-1502256266.us-west-2.elb.amazonaws.com/
+Project URL
+
+http://proje-webap-1qehr1i8l86u0-2039207062.us-west-2.elb.amazonaws.com/
 
 #Rubrics
+
+9 x Parameters
+12 x Outputs
+
 
 # The Basics
 # Parameters The more the better, but an exaggerated number of parameters can be messy ( say, 10 or more ). 1 or 0 is definitely lacking. =yes
