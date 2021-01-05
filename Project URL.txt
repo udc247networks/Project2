@@ -1,0 +1,1 @@
+http://proje-webap-1qehr1i8l86u0-2039207062.us-west-2.elb.amazonaws.com/
