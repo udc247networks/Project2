@@ -17,13 +17,16 @@ Parameters:
       Description: A Name for all the Resources 
       Type: String
 
-    AMItype:
-      Description: AMI type chosen as a Parameter  
-      Type: String
-      Default: t3.small
-
     AMInumber:
       Description: AMI number chosen as a Parameter  
+      Type: String
+
+    WebAppMinSize:
+      Description: auto Scaling Group Min Number 
+      Type: String
+
+    WebAppMaxSize:
+      Description: auto Scaling Group Max Number  
       Type: String
 
 # Resource Section 
@@ -128,7 +131,7 @@ Resources:
       ImageId: !Ref AMInumber
       SecurityGroups:
       - Ref: WebServerSecGroup
-      InstanceType: !Ref AMItype
+      InstanceType: t3.small
       IamInstanceProfile:  !Ref UDInstanceProfile
       BlockDeviceMappings:
       - DeviceName: "/dev/sdk"
@@ -143,8 +146,8 @@ Resources:
           !Sub "${EnvironmentName}-PRIV-NETS"
       LaunchConfigurationName:
         Ref: WebAppLaunchConfig
-      MinSize: '4'
-      MaxSize: '4'
+      MinSize: !Ref WebAppMinSize
+      MaxSize: !Ref WebAppMaxSize
       TargetGroupARNs:
       - Ref: WebAppTargetGroup
 
@@ -211,7 +214,7 @@ Outputs:
         Export:
           Name: !Sub ${EnvironmentName}-iam
 
-#Rubrics
+#Rubrics     URL http://proje-webap-1qehr1i8l86u0-2039207062.us-west-2.elb.amazonaws.com/ 
 
 # Load Balancer Health Check and Listener Port 80 should be used in Security groups, health checks and listeners associated with the load balancer = yes
 

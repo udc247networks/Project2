@@ -28,10 +28,25 @@ Parameters:
       Type: String
       Default: 10.100.0.0/16
 
-    SubnetCIDRBlocks:
-        Description: A list of Private Subnets 
-        Type: CommaDelimitedList
-        Default: 10.100.1.0/24, 10.100.2.0/24 10.100.10.0/24 10.100.20.0/24
+    privatesubnet1:
+        Description: Private Subnet 1  
+        Type: String
+        Default: 10.100.1.0/24
+
+    privatesubnet2:
+        Description: Private Subnet 2  
+        Type: String
+        Default: 10.100.2.0/24
+
+    publicsubnet1:
+        Description: Public Subnet 1  
+        Type: String
+        Default: 10.100.10.0/24
+
+    publicsubnet2:
+        Description: Public Subnet 2  
+        Type: String
+        Default: 10.100.20.0/24
 
 # Resource Section
 
@@ -75,7 +90,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VPC
-      CidrBlock: !Select [ 0, !Ref SubnetCIDRBlocks ] # will pick first subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      CidrBlock:  !Ref privatesubnet1  
       AvailabilityZone: !Select [ 0, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html
       MapPublicIpOnLaunch: false 
       Tags:
@@ -88,7 +103,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VPC
-      CidrBlock: !Select [ 1, !Ref SubnetCIDRBlocks ] # will pick Second subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      CidrBlock:  !Ref privatesubnet2
       AvailabilityZone: !Select [ 1, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html 
       MapPublicIpOnLaunch: false 
       Tags:
@@ -101,7 +116,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VPC
-      CidrBlock: !Select [ 2, !Ref SubnetCIDRBlocks ] # will pick third subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      CidrBlock:  !Ref publicsubnet1
       AvailabilityZone: !Select [ 0, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html 
       MapPublicIpOnLaunch: true
       Tags:
@@ -114,7 +129,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VPC
-      CidrBlock: !Select [ 3, !Ref SubnetCIDRBlocks ] # will pick Forth subnet in the list https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-select.html
+      CidrBlock:  !Ref publicsubnet2
       AvailabilityZone: !Select [ 1, !GetAZs ''] #https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html 
       MapPublicIpOnLaunch: true 
       Tags:
@@ -299,7 +314,7 @@ Outputs:
 # Parameters = yes
 # Resources = yes
 # Outputs = yes
-# WebSite URL =  http://proje-webap-1mdweypn1lcq3-1502256266.us-west-2.elb.amazonaws.com/
+# WebSite URL =  http://proje-webap-1qehr1i8l86u0-2039207062.us-west-2.elb.amazonaws.com/
 
 #Bonus Section 
 # Output "Any values in the output section are a bonus" = yes 

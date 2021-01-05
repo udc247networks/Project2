@@ -5,12 +5,17 @@
     },
 
 	{
-		"ParameterKey": "AMItype",
-		"ParameterValue": "t3.small"
+		"ParameterKey": "AMInumber",
+		"ParameterValue": "ami-0a36eb8fadc976275"
     },
 
 	{
-		"ParameterKey": "AMInumber",
-		"ParameterValue": "ami-0a36eb8fadc976275"
+		"ParameterKey": "WebAppMinSize",
+		"ParameterValue": "4"
+    },
+
+	{
+		"ParameterKey": "WebAppMaxSize",
+		"ParameterValue": "4"
     }
 ]

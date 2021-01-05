@@ -1,16 +1,31 @@
 [
-	{
-		"ParameterKey": "EnvironmentName",
-		"ParameterValue": "Project2-Udacity-2021"
-    },
+  {
+  "ParameterKey": "EnvironmentName",
+  "ParameterValue": "Project2-Udacity-2021"
+  },
     
-	{
-		"ParameterKey": "VpcCIDR",
-		"ParameterValue": "10.100.0.0/16"
-    },
+  {
+  "ParameterKey": "VpcCIDR",
+  "ParameterValue": "10.100.0.0/16"
+  },
 
-    {
-        "ParameterKey": "SubnetCIDRBlocks",
-        "ParameterValue": "10.100.1.0/24, 10.100.2.0/24, 10.100.10.0/24, 10.100.20.0/24"
-    }
+  {
+  "ParameterKey": "privatesubnet1",
+  "ParameterValue": "10.100.1.0/24"
+  },
+
+  {
+  "ParameterKey": "privatesubnet2",
+  "ParameterValue": "10.100.2.0/24"
+  },
+
+  {
+  "ParameterKey": "publicsubnet1",
+  "ParameterValue": "10.100.10.0/24"
+  },
+
+  {
+  "ParameterKey": "publicsubnet2",
+  "ParameterValue": "10.100.20.0/24"
+  }
 ]
